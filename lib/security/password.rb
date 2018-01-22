@@ -58,7 +58,17 @@ module Security
       end
 
       def find(options)
-        password_from_output(`security 2>&1 find-generic-password -g #{flags_for_options(options)}`)
+        output = `security 2>&1 find-generic-password -g #{flags_for_options(options)}`
+        if($?.exitstatus != 0)
+          message = nil
+          begin
+            message = `security error #{$?.exitstatus}`
+          rescue
+            message = 'Could not get error message'
+          end
+          raise "Unable to get this password, 'security find-generic-password -g' returned with code #{$?.exitstatus} (#{message})"
+        end
+        password_from_output(output)
       end
 
       def delete(options)
@@ -85,7 +95,17 @@ module Security
       end
 
       def find(options)
-        password_from_output(`security 2>&1 find-internet-password -g #{flags_for_options(options)}`)
+        output = `security 2>&1 find-internet-password -g #{flags_for_options(options)}`
+        if($?.exitstatus != 0)
+          message = nil
+          begin
+            message = `security error #{$?.exitstatus}`
+          rescue
+            message = 'Could not get error message'
+          end
+          raise "Unable to get this password, 'security find-internet-password -g' returned with code #{$?.exitstatus} (#{message})"
+        end
+        password_from_output(output)
       end
 
       def delete(options)
