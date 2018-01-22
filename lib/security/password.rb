@@ -15,6 +15,20 @@ module Security
     class << self
       private
 
+      def find(postfix, flags)
+        output = `security 2>&1 find-#{postfix} -g #{flags}`
+        if $CHILD_STATUS.exitstatus != 0
+          message = nil
+          begin
+            message = `security error #{$CHILD_STATUS.exitstatus}`
+          rescue StandardError
+            message = 'Could not get error message'
+          end
+          raise "Unable to get this password, 'security find-generic-password -g' returned with code #{$CHILD_STATUS.exitstatus} (#{message})"
+        end
+        password_from_output(output)
+      end
+
       def password_from_output(output)
         return nil if /^security\: / === output
 
@@ -50,6 +64,7 @@ module Security
   end
 
   class GenericPassword < Password
+    GENERIC_POSTFIX = 'generic-password'.freeze
     class << self
       def add(service, account, password, options = {})
         options[:a] = account
@@ -60,17 +75,7 @@ module Security
       end
 
       def find(options)
-        output = `security 2>&1 find-generic-password -g #{flags_for_options(options)}`
-        if $CHILD_STATUS.exitstatus != 0
-          message = nil
-          begin
-            message = `security error #{$CHILD_STATUS.exitstatus}`
-          rescue StandardError
-            message = 'Could not get error message'
-          end
-          raise "Unable to get this password, 'security find-generic-password -g' returned with code #{$CHILD_STATUS.exitstatus} (#{message})"
-        end
-        password_from_output(output)
+        super(GENERIC_POSTFIX, flags_for_options(options))
       end
 
       def delete(options)
@@ -87,6 +92,7 @@ module Security
   end
 
   class InternetPassword < Password
+    INTERNET_POSTFIX = 'internet-password'.freeze
     class << self
       def add(server, account, password, options = {})
         options[:a] = account
@@ -97,17 +103,7 @@ module Security
       end
 
       def find(options)
-        output = `security 2>&1 find-internet-password -g #{flags_for_options(options)}`
-        if $CHILD_STATUS.exitstatus != 0
-          message = nil
-          begin
-            message = `security error #{$CHILD_STATUS.exitstatus}`
-          rescue StandardError
-            message = 'Could not get error message'
-          end
-          raise "Unable to get this password, 'security find-internet-password -g' returned with code #{$CHILD_STATUS.exitstatus} (#{message})"
-        end
-        password_from_output(output)
+        super(INTERNET_POSTFIX, flags_for_options(options))
       end
 
       def delete(options)
