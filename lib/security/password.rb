@@ -18,15 +18,17 @@ module Security
       def password_from_output(output)
         return nil if /^security\: / === output
 
-        keychain, attributes, password = nil, {}, nil
+        keychain = nil
+        attributes = {}
+        password = nil
         output.split(/\n/).each do |line|
           case line
           when /^keychain\: \"(.+)\"/
-            keychain = $1
+            keychain = Regexp.last_match(1)
           when /\"(\w{4})\".+\=\"(.+)\"/
-            attributes[$1] = $2
+            attributes[Regexp.last_match(1)] = Regexp.last_match(2)
           when /^password\: \"(.+)\"/
-            password = $1
+            password = Regexp.last_match(1)
           end
         end
 
@@ -42,7 +44,7 @@ module Security
         flags[:G] ||= flags.delete(:value)
         flags[:j] ||= flags.delete(:comment)
 
-        flags.delete_if{|k,v| v.nil?}.collect{|k, v| "-#{k} #{v.shellescape}".strip}.join(" ")
+        flags.delete_if { |_k, v| v.nil? }.collect { |k, v| "-#{k} #{v.shellescape}".strip }.join(' ')
       end
     end
   end
@@ -59,14 +61,14 @@ module Security
 
       def find(options)
         output = `security 2>&1 find-generic-password -g #{flags_for_options(options)}`
-        if($?.exitstatus != 0)
+        if $CHILD_STATUS.exitstatus != 0
           message = nil
           begin
-            message = `security error #{$?.exitstatus}`
-          rescue
+            message = `security error #{$CHILD_STATUS.exitstatus}`
+          rescue StandardError
             message = 'Could not get error message'
           end
-          raise "Unable to get this password, 'security find-generic-password -g' returned with code #{$?.exitstatus} (#{message})"
+          raise "Unable to get this password, 'security find-generic-password -g' returned with code #{$CHILD_STATUS.exitstatus} (#{message})"
         end
         password_from_output(output)
       end
@@ -96,14 +98,14 @@ module Security
 
       def find(options)
         output = `security 2>&1 find-internet-password -g #{flags_for_options(options)}`
-        if($?.exitstatus != 0)
+        if $CHILD_STATUS.exitstatus != 0
           message = nil
           begin
-            message = `security error #{$?.exitstatus}`
-          rescue
+            message = `security error #{$CHILD_STATUS.exitstatus}`
+          rescue StandardError
             message = 'Could not get error message'
           end
-          raise "Unable to get this password, 'security find-internet-password -g' returned with code #{$?.exitstatus} (#{message})"
+          raise "Unable to get this password, 'security find-internet-password -g' returned with code #{$CHILD_STATUS.exitstatus} (#{message})"
         end
         password_from_output(output)
       end
